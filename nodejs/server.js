@@ -50,7 +50,11 @@ app.get('/config', (req, res) => {
     res.json({
         success: true,
         data: {
-            publicApiKey: process.env.PUBLIC_API_KEY
+            publicApiKey: process.env.PUBLIC_API_KEY,
+            merchantInfo: {
+                merchantName: process.env.MERCHANT_NAME || 'Test Merchant',
+                merchantId: process.env.GOOGLE_PAY_MERCHANT_ID
+            }
             // Add other configuration data as needed
         }
     });
@@ -110,6 +114,88 @@ app.post('/process-payment', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Payment processing failed',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * Google Pay payment processing endpoint
+ * Processes payments using Google Pay payment tokens
+ */
+app.post('/process-google-pay', async (req, res) => {
+    try {
+        // Validate required fields for Google Pay
+        if (!req.body.paymentToken) {
+            throw new Error('Google Pay payment token is required');
+        }
+
+        // Parse Google Pay payment token
+        const googlePayToken = JSON.parse(req.body.paymentToken);
+        
+        // Extract payment token from Google Pay response
+        const paymentToken = googlePayToken.paymentMethodData.tokenizationData.token;
+        
+        if (!paymentToken) {
+            throw new Error('Invalid Google Pay token format');
+        }
+
+        // Create card data using the Google Pay token
+        const card = new CreditCardData();
+        card.token = paymentToken;
+
+        // Get amount from request or use default
+        const amount = parseFloat(req.body.amount) || 10.00;
+
+        // Add billing address if provided
+        let response;
+        if (req.body.billing_zip) {
+            const address = new Address();
+            address.postalCode = sanitizePostalCode(req.body.billing_zip);
+            
+            response = await card.charge(amount)
+                .withAllowDuplicates(true)
+                .withCurrency('USD')
+                .withAddress(address)
+                .execute();
+        } else {
+            // Process without address
+            response = await card.charge(amount)
+                .withAllowDuplicates(true)
+                .withCurrency('USD')
+                .execute();
+        }
+
+        // Return success response
+        res.json({
+            success: true,
+            message: 'Google Pay payment processed successfully',
+            data: {
+                transactionId: response.transactionId,
+                amount: amount,
+                currency: 'USD',
+                paymentMethod: 'Google Pay'
+            }
+        });
+
+    } catch (error) {
+        console.error('Google Pay processing error:', error);
+        
+        // Handle different types of errors
+        let errorMessage = 'Google Pay payment processing failed';
+        let statusCode = 500;
+        
+        if (error instanceof ApiError) {
+            errorMessage = `API Error: ${error.message}`;
+            statusCode = 400;
+        } else if (error.message.includes('token')) {
+            errorMessage = `Token Error: ${error.message}`;
+            statusCode = 400;
+        }
+
+        res.status(statusCode).json({
+            success: false,
+            message: errorMessage,
             error: error.message
         });
     }
