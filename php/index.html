@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://globalpayments-samples.github.io/css/styles.css">
+    <link rel="stylesheet" href="google-pay.css">
 </head>
 <body>
     <!-- Header -->
@@ -38,6 +39,7 @@
         <div class="gp-tabs">
             <div class="gp-tab-list">
                 <button class="gp-tab-button active" data-tab="payment-form">Payment Form</button>
+                <button class="gp-tab-button" data-tab="google-pay">Google Pay</button>
                 <button class="gp-tab-button" data-tab="tokenization">Tokenization</button>
                 <button class="gp-tab-button" data-tab="webhooks">Webhooks</button>
                 <button class="gp-tab-button" data-tab="recurring">Recurring Payments</button>
@@ -73,6 +75,42 @@
                             Process Payment
                         </button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Google Pay Tab -->
+            <div class="gp-tab-content" id="google-pay">
+                <div class="gp-card">
+                    <div class="gp-card-header">
+                        <h2 class="gp-card-title">Google Pay Integration</h2>
+                        <p class="gp-card-description">
+                            Process payments securely using Google Pay with GP-API integration.
+                        </p>
+                    </div>
+                    
+                    <div class="gp-alert gp-alert-info">
+                        <strong>Info:</strong> Google Pay requires HTTPS to function properly. Ensure you're testing on a secure connection.
+                    </div>
+
+                    <form id="google-pay-form" class="gp-form">
+                        <div class="gp-form-group">
+                            <label for="google-pay-amount" class="gp-label">Amount (GBP):</label>
+                            <input type="number" id="google-pay-amount" name="amount" class="gp-input" min="0.01" step="0.01" value="10.00" required>
+                        </div>
+                        
+                        <div class="gp-form-group">
+                            <label class="gp-label">Google Pay Payment:</label>
+                            <div id="google-pay-container" class="gp-google-pay-container">
+                                <div id="google-pay-button"></div>
+                                <p id="google-pay-status" class="gp-payment-status"></p>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="google-pay-result" class="gp-hidden">
+                        <h3 class="gp-card-title gp-mt-lg">Payment Result:</h3>
+                        <div class="gp-code-block" id="google-pay-result-display"></div>
+                    </div>
                 </div>
             </div>
 
@@ -209,5 +247,7 @@ app.post('/webhook', (req, res) => {
     </footer>
 
     <script src="https://globalpayments-samples.github.io/js/script.js"></script>
+    <script defer src="https://pay.google.com/gp/p/js/pay.js" onload="onGooglePayLoaded()"></script>
+    <script defer src="google-pay.js"></script>
 </body>
 </html>
