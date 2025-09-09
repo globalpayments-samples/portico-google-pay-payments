@@ -29,11 +29,19 @@ try {
     // Set response content type to JSON
     header('Content-Type: application/json');
 
-    // Return public API key in JSON response
+    // Return configuration data in JSON response
     echo json_encode([
         'success' => true,
         'data' => [
-            'publicApiKey' => $_ENV['PUBLIC_API_KEY'],
+            'publicApiKey' => $_ENV['PUBLIC_API_KEY'] ?? null,
+            'googlePayConfig' => [
+                'googleMerchant' => $_ENV['GOOGLE_PAY_MERCHANT_ID'] ?? '12345678901234567890',
+                'globalPaymentsMerchant' => $_ENV['GP_API_MERCHANT_ID'] ?? 'merchant_id',
+                'environment' => $_ENV['GP_API_ENVIRONMENT'] === 'PRODUCTION' ? 'PRODUCTION' : 'TEST',
+                'countryCode' => $_ENV['GOOGLE_PAY_COUNTRY_CODE'] ?? 'GB',
+                'currencyCode' => $_ENV['GOOGLE_PAY_CURRENCY_CODE'] ?? 'GBP',
+                'buttonColor' => $_ENV['GOOGLE_PAY_BUTTON_COLOR'] ?? 'black'
+            ]
         ],
     ]);
 } catch (Exception $e) {

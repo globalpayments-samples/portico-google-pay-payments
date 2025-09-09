@@ -9,10 +9,13 @@ import express from 'express';
 import * as dotenv from 'dotenv';
 import {
     ServicesContainer,
+    PaymentDataSourceType,
+    MobilePaymentMethodType,
     PorticoConfig,
     Address,
     CreditCardData,
-    ApiError
+    ApiError,
+    TransactionModifier
 } from 'globalpayments-api';
 
 // Load environment variables from .env file
@@ -132,17 +135,38 @@ app.post('/process-google-pay', async (req, res) => {
 
         // Parse Google Pay payment token
         const googlePayToken = JSON.parse(req.body.paymentToken);
+        console.log('Google Pay Token:', googlePayToken);
         
-        // Extract payment token from Google Pay response
-        const paymentToken = googlePayToken.paymentMethodData.tokenizationData.token;
+        // Extract and parse the nested payment token from Google Pay response
+        const tokenizationData = googlePayToken.paymentMethodData?.tokenizationData;
+        
+        if (!tokenizationData || !tokenizationData.token) {
+            throw new Error('Invalid Google Pay token format: missing tokenization data');
+        }
+        
+        // Parse the nested JSON token string to get the actual payment data
+        let paymentToken;
+        try {
+            const parsedToken = JSON.parse(tokenizationData.token);
+            console.log('Parsed Google Pay Token:', parsedToken);
+            
+            // For Heartland Portico, we need to use the entire parsed token structure
+            // The gateway expects the signature, protocolVersion, and signedMessage
+            paymentToken = JSON.stringify(parsedToken);
+        } catch (parseError) {
+            console.error('Failed to parse Google Pay token:', parseError);
+            throw new Error('Invalid Google Pay token format: unable to parse token data');
+        }
         
         if (!paymentToken) {
-            throw new Error('Invalid Google Pay token format');
+            throw new Error('Invalid Google Pay token format: empty payment token');
         }
 
-        // Create card data using the Google Pay token
+        // Create card data using the Google Pay token for Portico WalletData
         const card = new CreditCardData();
         card.token = paymentToken;
+        card.mobileType = MobilePaymentMethodType.GOOGLEPAY;
+        card.paymentSource = PaymentDataSourceType.GOOGLEPAYWEB;
 
         // Get amount from request or use default
         const amount = parseFloat(req.body.amount) || 10.00;
@@ -188,9 +212,15 @@ app.post('/process-google-pay', async (req, res) => {
         if (error instanceof ApiError) {
             errorMessage = `API Error: ${error.message}`;
             statusCode = 400;
-        } else if (error.message.includes('token')) {
+        } else if (error.message.includes('token') || error.message.includes('tokenization')) {
             errorMessage = `Token Error: ${error.message}`;
             statusCode = 400;
+        } else if (error.message.includes('parse') || error.message.includes('JSON')) {
+            errorMessage = `Parse Error: ${error.message}`;
+            statusCode = 400;
+        } else if (error.message.includes('Gateway') || error.message.includes('System error')) {
+            errorMessage = `Gateway Error: ${error.message}`;
+            statusCode = 502;
         }
 
         res.status(statusCode).json({
