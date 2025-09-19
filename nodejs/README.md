@@ -144,9 +144,6 @@ Response (Error):
 }
 ```
 
-### POST /process-payment (Legacy)
-Original credit card processing endpoint (still available for backward compatibility).
-
 ## Google Pay Testing
 
 ### Test Environment
@@ -163,10 +160,12 @@ Original credit card processing endpoint (still available for backward compatibi
 6. Check console logs for detailed debugging information
 
 ### Supported Browsers
-- Chrome (Desktop and Mobile)
-- Safari (Mobile iOS)
+- Chrome (Desktop and Mobile Web)
+- Safari (Mobile iOS Web)
 - Firefox (with limitations)
 - Edge (with limitations)
+
+*Note: This example covers web browser integration only. Native mobile app integration requires additional implementation.*
 
 ### Supported Card Networks
 - Visa

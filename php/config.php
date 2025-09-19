@@ -34,10 +34,13 @@ try {
         'success' => true,
         'data' => [
             'publicApiKey' => $_ENV['PUBLIC_API_KEY'] ?? null,
+            'merchantInfo' => [
+                'merchantName' => $_ENV['MERCHANT_NAME'] ?? 'Test Merchant',
+                'merchantId' => $_ENV['MERCHANT_ID'] ?? null,
+            ],
             'googlePayConfig' => [
-                'googleMerchant' => $_ENV['GOOGLE_PAY_MERCHANT_ID'] ?? '12345678901234567890',
-                'globalPaymentsMerchant' => $_ENV['GP_API_MERCHANT_ID'] ?? 'merchant_id',
-                'environment' => $_ENV['GP_API_ENVIRONMENT'] === 'PRODUCTION' ? 'PRODUCTION' : 'TEST',
+                'googleMerchantId' => $_ENV['GOOGLE_PAY_MERCHANT_ID'] ?? '12345678901234567890',
+                'environment' => $_ENV['ENVIRONMENT'] === 'PRODUCTION' ? 'PRODUCTION' : 'TEST',
                 'countryCode' => $_ENV['GOOGLE_PAY_COUNTRY_CODE'] ?? 'GB',
                 'currencyCode' => $_ENV['GOOGLE_PAY_CURRENCY_CODE'] ?? 'GBP',
                 'buttonColor' => $_ENV['GOOGLE_PAY_BUTTON_COLOR'] ?? 'black'

@@ -27,8 +27,9 @@ use GlobalPayments\Api\Entities\Enums\Channel;
 use GlobalPayments\Api\Entities\Enums\TransactionModifier;
 use GlobalPayments\Api\Entities\Exceptions\ApiException;
 use GlobalPayments\Api\PaymentMethods\CreditCardData;
-use GlobalPayments\Api\ServiceConfigs\Gateways\GpApiConfig;
+use GlobalPayments\Api\ServiceConfigs\Gateways\PorticoConfig;
 use GlobalPayments\Api\ServicesContainer;
+use GlobalPayments\Api\Entities\Enums\PaymentDataSourceType;
 use GlobalPayments\Api\Utils\Logging\Logger;
 use GlobalPayments\Api\Utils\Logging\SampleRequestLogger;
 
@@ -47,14 +48,13 @@ function configureSdk(): void
     $dotenv = Dotenv::createImmutable(__DIR__);
     $dotenv->load();
 
-    $config = new GpApiConfig();
-    $config->appId = $_ENV['GP_API_APP_ID'];
-    $config->appKey = $_ENV['GP_API_APP_KEY'];
-    $config->environment = $_ENV['GP_API_ENVIRONMENT'] === 'PRODUCTION' ? Environment::PRODUCTION : Environment::TEST;
-    $config->channel = Channel::CardNotPresent;
+    $config = new PorticoConfig();
+    $config->secretApiKey = $_ENV['SECRET_API_KEY'];
+    $config->serviceUrl = 'https://cert.api2.heartlandportico.com';
     
     // Add logging if enabled
     if (isset($_ENV['ENABLE_LOGGING']) && $_ENV['ENABLE_LOGGING'] === 'true') {
+        $config->enableLogging = true;
         $config->requestLogger = new SampleRequestLogger(new Logger("logs"));
     }
 
@@ -103,24 +103,6 @@ function sanitizeAmount($amount): string
     return number_format($amount, 2, '.', '');
 }
 
-/**
- * Process Google Pay token
- *
- * @param string $googlePayToken The Google Pay token from the client
- *
- * @return string Processed token ready for API
- */
-function processGooglePayToken(string $googlePayToken): string
-{
-    // Decode HTML entities that may have been encoded during transmission
-    $token = htmlspecialchars_decode($googlePayToken);
-    
-    // Replace double backslashes with single backslashes to fix JSON encoding
-    $token = str_replace('\\\\', '\\', $token);
-    
-    return $token;
-}
-
 // Set response content type
 header('Content-Type: application/json');
 
@@ -141,19 +123,21 @@ try {
 }
 
 try {
+    $requestData = json_decode(file_get_contents('php://input'));
+
     // Validate required POST parameters
-    if (!isset($_POST['googlePayToken'])) {
+    if (!isset($requestData->token)) {
         throw new ApiException('Google Pay token is required');
     }
 
-    if (!isset($_POST['amount'])) {
+    if (!isset($requestData->amount)) {
         throw new ApiException('Amount is required');
     }
 
     // Process and validate input parameters
-    $googlePayToken = processGooglePayToken($_POST['googlePayToken']);
-    $amount = sanitizeAmount($_POST['amount']);
-    $currency = sanitizeCurrency($_POST['currency'] ?? 'GBP');
+    $googlePayToken = $requestData->token;
+    $amount = sanitizeAmount($requestData->amount);
+    $currency = sanitizeCurrency($requestData->currency ?? 'GBP');
 
     // Validate Google Pay token format
     $tokenData = json_decode($googlePayToken, true);
@@ -165,11 +149,11 @@ try {
     $card = new CreditCardData();
     $card->token = $googlePayToken;
     $card->mobileType = EncyptedMobileType::GOOGLE_PAY;
+    $card->paymentSource = PaymentDataSourceType::GOOGLEPAYWEB;
 
     // Process the payment transaction
     $transaction = $card->charge($amount)
         ->withCurrency($currency)
-        ->withModifier(TransactionModifier::ENCRYPTED_MOBILE)
         ->execute();
 
     // Verify transaction was successful
