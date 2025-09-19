@@ -15,7 +15,9 @@ import {
     Address,
     CreditCardData,
     ApiError,
-    TransactionModifier
+    TransactionModifier,
+    SampleRequestLogger,
+    Logger,
 } from 'globalpayments-api';
 
 // Load environment variables from .env file
@@ -35,6 +37,10 @@ app.use(express.json()); // Parse JSON requests
 const config = new PorticoConfig();
 config.secretApiKey = process.env.SECRET_API_KEY;
 config.serviceUrl = 'https://cert.api2.heartlandportico.com'; // Use production URL for live transactions
+if (process.env.ENABLE_LOGGING) {
+    config.enableLogging = true;
+    config.requestLogger = new SampleRequestLogger(new Logger("logs"));
+}
 ServicesContainer.configureService(config);
 
 /**
@@ -56,9 +62,15 @@ app.get('/config', (req, res) => {
             publicApiKey: process.env.PUBLIC_API_KEY,
             merchantInfo: {
                 merchantName: process.env.MERCHANT_NAME || 'Test Merchant',
-                merchantId: process.env.GOOGLE_PAY_MERCHANT_ID
+                merchantId: process.env.MERCHANT_ID || ''
+            },
+            googlePayConfig: {
+                googleMerchantId: process.env.GOOGLE_PAY_MERCHANT_ID || '12345678901234567890',
+                environment: process.env.ENVIRONMENT === 'PRODUCTION' ? 'PRODUCTION' : 'TEST',
+                countryCode: process.env.GOOGLE_PAY_COUNTRY_CODE || 'GB',
+                currencyCode: process.env.GOOGLE_PAY_CURRENCY_CODE || 'GBP',
+                buttonColor: process.env.GOOGLE_PAY_BUTTON_COLOR || 'black'
             }
-            // Add other configuration data as needed
         }
     });
 });
@@ -128,43 +140,56 @@ app.post('/process-payment', async (req, res) => {
  */
 app.post('/process-google-pay', async (req, res) => {
     try {
-        // Validate required fields for Google Pay
-        if (!req.body.paymentToken) {
-            throw new Error('Google Pay payment token is required');
-        }
+        // // Validate required fields for Google Pay
+        // if (!req.body.paymentToken) {
+        //     throw new Error('Google Pay payment token is required');
+        // }
 
-        // Parse Google Pay payment token
-        const googlePayToken = JSON.parse(req.body.paymentToken);
-        console.log('Google Pay Token:', googlePayToken);
+        // // Parse Google Pay payment token
+        // const googlePayToken = JSON.parse(req.body.paymentToken);
+        // console.log('Google Pay Token:', googlePayToken);
         
-        // Extract and parse the nested payment token from Google Pay response
-        const tokenizationData = googlePayToken.paymentMethodData?.tokenizationData;
+        // // Extract and parse the nested payment token from Google Pay response
+        // const tokenizationData = googlePayToken.paymentMethodData?.tokenizationData;
         
-        if (!tokenizationData || !tokenizationData.token) {
-            throw new Error('Invalid Google Pay token format: missing tokenization data');
-        }
+        // if (!tokenizationData || !tokenizationData.token) {
+        //     throw new Error('Invalid Google Pay token format: missing tokenization data');
+        // }
         
-        // Parse the nested JSON token string to get the actual payment data
-        let paymentToken;
-        try {
-            const parsedToken = JSON.parse(tokenizationData.token);
-            console.log('Parsed Google Pay Token:', parsedToken);
+        // // Parse the nested JSON token string to get the actual payment data
+        // let paymentToken;
+        // try {
+        //     const parsedToken = JSON.parse(tokenizationData.token);
+        //     // parsedToken.signature = parsedToken.signature.replace(/\=/g, '\u003d');
+        //     // parsedToken.signedMessage = parsedToken.signedMessage.replace(/\\u003d/g, '=');
+        //     console.log('Parsed Google Pay Token:', parsedToken);
             
-            // For Heartland Portico, we need to use the entire parsed token structure
-            // The gateway expects the signature, protocolVersion, and signedMessage
-            paymentToken = JSON.stringify(parsedToken);
-        } catch (parseError) {
-            console.error('Failed to parse Google Pay token:', parseError);
-            throw new Error('Invalid Google Pay token format: unable to parse token data');
-        }
+        //     // For Heartland Portico, we need to use the entire parsed token structure
+        //     // The gateway expects the signature, protocolVersion, and signedMessage
+        //     // paymentToken = JSON.stringify(parsedToken);
+        //     paymentToken = tokenizationData.token;
+        //     console.log(paymentToken);
+        // } catch (parseError) {
+        //     console.error('Failed to parse Google Pay token:', parseError);
+        //     throw new Error('Invalid Google Pay token format: unable to parse token data');
+        // }
         
-        if (!paymentToken) {
-            throw new Error('Invalid Google Pay token format: empty payment token');
-        }
+        // if (!paymentToken) {
+        //     throw new Error('Invalid Google Pay token format: empty payment token');
+        // }
 
         // Create card data using the Google Pay token for Portico WalletData
+        // const card = new CreditCardData();
+        // card.token = paymentToken;
+        // card.mobileType = MobilePaymentMethodType.GOOGLEPAY;
+        // card.paymentSource = PaymentDataSourceType.GOOGLEPAYWEB;
+
+        // console.log(req.body)
+        // console.log(req.body.response.details)
+        // console.log(req.body.response.details.paymentMethodToken)
+
         const card = new CreditCardData();
-        card.token = paymentToken;
+        card.token = req.body.token;
         card.mobileType = MobilePaymentMethodType.GOOGLEPAY;
         card.paymentSource = PaymentDataSourceType.GOOGLEPAYWEB;
 
@@ -176,17 +201,19 @@ app.post('/process-google-pay', async (req, res) => {
         if (req.body.billing_zip) {
             const address = new Address();
             address.postalCode = sanitizePostalCode(req.body.billing_zip);
-            
+
             response = await card.charge(amount)
                 .withAllowDuplicates(true)
                 .withCurrency('USD')
                 .withAddress(address)
+                // .withModifier(TransactionModifier.EncryptedMobile)
                 .execute();
         } else {
             // Process without address
             response = await card.charge(amount)
                 .withAllowDuplicates(true)
                 .withCurrency('USD')
+                // .withModifier(TransactionModifier.EncryptedMobile)
                 .execute();
         }
 
