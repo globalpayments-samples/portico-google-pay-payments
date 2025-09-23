@@ -76,8 +76,9 @@ Each implementation requires these environment variables in `.env`:
 PUBLIC_API_KEY=pkapi_your_public_key_here
 SECRET_API_KEY=skapi_your_secret_key_here
 
-# Google Pay Configuration (Node.js)
+# Google Pay Configuration
 MERCHANT_NAME="Your Merchant Name"
+MERCHANT_ID=your_global_payments_merchant_id
 GOOGLE_PAY_MERCHANT_ID=your_google_pay_merchant_id
 
 # Server Configuration

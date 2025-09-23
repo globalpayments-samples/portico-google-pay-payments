@@ -27,6 +27,7 @@ This example demonstrates Google Pay payment processing using PHP and the Global
    PUBLIC_API_KEY=pkapi_your_public_key_here
    SECRET_API_KEY=skapi_your_secret_key_here
    MERCHANT_NAME="Your Merchant Name"
+   MERCHANT_ID=your_global_payments_merchant_id
    GOOGLE_PAY_MERCHANT_ID=your_google_pay_merchant_id
    PORT=8000
    ```
@@ -148,6 +149,7 @@ Update the following in your `.env` file for production:
 # Production values
 GOOGLE_PAY_MERCHANT_ID=your_actual_merchant_id
 MERCHANT_NAME="Your Actual Business Name"
+MERCHANT_ID=your_global_payments_merchant_id
 PUBLIC_API_KEY=pkapi_your_production_key
 SECRET_API_KEY=skapi_your_production_key
 ```

@@ -25,7 +25,8 @@ This example demonstrates Google Pay payment processing using ASP.NET Core and t
    ```
    PUBLIC_API_KEY=pkapi_your_public_key_here
    SECRET_API_KEY=skapi_your_secret_key_here
-   MERCHANT_NAME=Your Merchant Name
+   MERCHANT_NAME="Your Merchant Name"
+   MERCHANT_ID=your_global_payments_merchant_id
    GOOGLE_PAY_MERCHANT_ID=your_google_pay_merchant_id
    PORT=8000
    ```
@@ -95,7 +96,7 @@ Response:
     "publicApiKey": "pkapi_your_public_key_here",
     "merchantInfo": {
         "merchantName": "Your Merchant Name",
-        "merchantId": "your_google_pay_merchant_id"
+        "merchantId": "your_global_payments_merchant_id"
     }
 }
 ```
