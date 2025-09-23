@@ -1,7 +1,10 @@
 using GlobalPayments.Api;
 using GlobalPayments.Api.Entities;
 using GlobalPayments.Api.PaymentMethods;
+using GlobalPayments.Api.Entities.Enums;
+using GlobalPayments.Api.Utils.Logging;
 using dotenv.net;
+using System.Text.Json;
 
 namespace CardPaymentSample;
 
@@ -44,13 +47,22 @@ public class Program
     /// </summary>
     private static void ConfigureGlobalPaymentsSDK()
     {
-        ServicesContainer.ConfigureService(new PorticoConfig
+        var config = new PorticoConfig
         {
             SecretApiKey = System.Environment.GetEnvironmentVariable("SECRET_API_KEY"),
             DeveloperId = "000000",
             VersionNumber = "0000",
             ServiceUrl = "https://cert.api2.heartlandportico.com"
-        });
+        };
+
+        bool.TryParse(System.Environment.GetEnvironmentVariable("ENABLE_LOGGING"), out var enableLogging);
+        if (enableLogging == true)
+        {
+            config.EnableLogging = true;
+            config.RequestLogger = new RequestFileLogger(@"log.txt");
+        }
+
+        ServicesContainer.ConfigureService(config);
     }
 
     /// <summary>
@@ -64,11 +76,23 @@ public class Program
         { 
             success = true,
             data = new {
-                publicApiKey = System.Environment.GetEnvironmentVariable("PUBLIC_API_KEY")
+                publicApiKey = System.Environment.GetEnvironmentVariable("PUBLIC_API_KEY"),
+                merchantInfo = new {
+                    merchantName = System.Environment.GetEnvironmentVariable("MERCHANT_NAME") ?? "Test Merchant",
+                    merchantId = System.Environment.GetEnvironmentVariable("MERCHANT_ID") ?? ""
+                },
+                googlePayConfig = new {
+                    googleMerchantId = System.Environment.GetEnvironmentVariable("GOOGLE_PAY_MERCHANT_ID") ?? "12345678901234567890",
+                    environment = System.Environment.GetEnvironmentVariable("ENVIRONMENT") == "PRODUCTION" ? "PRODUCTION" : "TEST",
+                    countryCode = System.Environment.GetEnvironmentVariable("GOOGLE_PAY_COUNTRY_CODE") ?? "GB",
+                    currencyCode = System.Environment.GetEnvironmentVariable("GOOGLE_PAY_CURRENCY_CODE") ?? "GBP",
+                    buttonColor = System.Environment.GetEnvironmentVariable("GOOGLE_PAY_BUTTON_COLOR") ?? "black"
+                }
             }
         }));
 
         ConfigurePaymentEndpoint(app);
+        ConfigureGooglePayEndpoint(app);
     }
 
     /// <summary>
@@ -185,6 +209,135 @@ public class Program
                         details = ex.Message
                     }
                 });
+            }
+        });
+    }
+
+    /// <summary>
+    /// Configures the Google Pay payment processing endpoint that handles Google Pay tokens.
+    /// </summary>
+    /// <param name="app">The web application to configure</param>
+    private static void ConfigureGooglePayEndpoint(WebApplication app)
+    {
+        app.MapPost("/process-google-pay", async (HttpContext context) =>
+        {
+            try
+            {
+                // Read JSON payload from request body
+                var body = await context.Request.ReadFromJsonAsync<JsonElement>();
+                
+                // Extract required fields from JSON payload
+                if (!body.TryGetProperty("token", out var tokenElement) || 
+                    !body.TryGetProperty("amount", out var amountElement))
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Google Pay token and amount are required",
+                        error = new {
+                            code = "VALIDATION_ERROR",
+                            details = "Missing required fields: token, amount"
+                        }
+                    });
+                }
+
+                var googlePayToken = tokenElement.GetString();
+                var amountStr = amountElement.GetString();
+
+                // Validate and parse amount
+                if (!decimal.TryParse(amountStr, out var amount) || amount <= 0)
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Google Pay payment processing failed",
+                        error = new {
+                            code = "VALIDATION_ERROR",
+                            details = "Amount must be a positive number"
+                        }
+                    });
+                }
+
+                // Initialize credit card with Google Pay token
+                var card = new CreditCardData
+                {
+                    Token = googlePayToken,
+                    MobileType = MobilePaymentMethodType.GOOGLEPAY,
+                    PaymentSource = PaymentDataSourceType.GOOGLEPAYWEB
+                };
+
+                // Add billing address if provided
+                Address address = null;
+                if (body.TryGetProperty("billing_zip", out var billingZipElement))
+                {
+                    var billingZip = billingZipElement.GetString();
+                    if (!string.IsNullOrEmpty(billingZip))
+                    {
+                        address = new Address
+                        {
+                            PostalCode = SanitizePostalCode(billingZip)
+                        };
+                    }
+                }
+
+                // Process the Google Pay payment transaction
+                var chargeBuilder = card.Charge(amount)
+                    .WithAllowDuplicates(true)
+                    .WithCurrency("USD");
+
+                if (address != null)
+                {
+                    chargeBuilder = chargeBuilder.WithAddress(address);
+                }
+
+                var response = chargeBuilder.Execute();
+
+                // Verify transaction was successful
+                if (response.ResponseCode != "00")
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Google Pay payment was declined",
+                        error = new {
+                            code = "PAYMENT_DECLINED",
+                            details = response.ResponseMessage
+                        }
+                    });
+                }
+
+                // Return success response with transaction details
+                return Results.Ok(new
+                {
+                    success = true,
+                    message = "Google Pay payment processed successfully",
+                    data = new {
+                        transactionId = response.TransactionId,
+                        amount = amount,
+                        currency = "USD",
+                        paymentMethod = "Google Pay"
+                    }
+                });
+            }
+            catch (ApiException ex)
+            {
+                // Handle payment processing errors
+                var errorMessage = $"API Error: {ex.Message}";
+                var statusCode = 400;
+
+                return Results.Json(new {
+                    success = false,
+                    message = errorMessage,
+                    error = ex.Message
+                }, statusCode: statusCode);
+            }
+            catch (Exception ex)
+            {
+                // Handle unexpected errors
+                Console.WriteLine($"Google Pay processing error: {ex.Message}");
+                
+                return Results.Json(new {
+                    success = false,
+                    message = "Google Pay payment processing failed",
+                    error = ex.Message
+                }, statusCode: 500);
             }
         });
     }
