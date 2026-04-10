@@ -299,7 +299,7 @@ var transaction = await card.Charge(amount)
 | `GOOGLE_PAY_CURRENCY_CODE` | ISO 4217 currency code | ❌ | `GBP` (default) |
 | `GOOGLE_PAY_BUTTON_COLOR` | Google Pay button color | ❌ | `black` or `white` |
 
-Obtain Portico credentials from your [Global Payments developer account](https://developer.globalpay.com/).
+Obtain Portico credentials from your [Global Payments developer account](https://developer.globalpayments.com/).
 
 ## Google Pay Test Environment
 
@@ -391,10 +391,10 @@ Each implementation has its own detailed README:
 
 ## External Resources
 
-- [Global Payments Developer Portal](https://developer.globalpay.com/)
+- [Global Payments Developer Portal](https://developer.globalpayments.com/)
 - [Google Pay Web Integration Guide](https://developers.google.com/pay/api/web/overview)
 - [Google Pay Test Cards](https://developers.google.com/pay/api/web/guides/resources/test-card-suite)
-- [Portico Alternative Payments Docs](https://developer.globalpay.com/api/digital-wallets)
+- [Portico Alternative Payments Docs](https://developer.globalpayments.com/api/references-overview)
 
 ## License
 
