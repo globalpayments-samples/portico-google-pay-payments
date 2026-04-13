@@ -288,7 +288,7 @@ var transaction = await card.Charge(amount)
 
 | Variable | Description | Required | Example |
 |----------|-------------|----------|---------|
-| `PUBLIC_API_KEY` | Public key for Heartland.js (passed to browser) | ✅ | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
+| `PUBLIC_API_KEY` | Public key for globalpayments.js (passed to browser) | ✅ | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
 | `SECRET_API_KEY` | Secret key for server-side Portico API calls | ✅ | `skapi_cert_MTyMAQBiHVE...` |
 | `MERCHANT_ID` | Your Portico merchant ID | ✅ | `777704033964` |
 | `MERCHANT_NAME` | Your business name shown in Google Pay sheet | ✅ | `Test Merchant` |

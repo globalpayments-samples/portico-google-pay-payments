@@ -63,7 +63,7 @@ Or use the convenience script:
 
 | Variable | Description | Required | Example |
 |----------|-------------|----------|---------|
-| `PUBLIC_API_KEY` | Public key passed to browser for Heartland.js | ✅ | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
+| `PUBLIC_API_KEY` | Public key passed to browser for globalpayments.js | ✅ | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
 | `SECRET_API_KEY` | Secret key for server-side Portico API calls | ✅ | `skapi_cert_MeHOBQ...` |
 | `MERCHANT_ID` | Portico merchant ID shown in Google Pay sheet | ✅ | `777704033964` |
 | `MERCHANT_NAME` | Business name shown in Google Pay sheet | ✅ | `Test Merchant` |
