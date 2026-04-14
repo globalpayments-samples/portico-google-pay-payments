@@ -4,11 +4,16 @@ Complete implementation of Google Pay web payments using the Global Payments Por
 
 ## Available Implementations
 
-| Language | Framework | SDK | Port | Preview |
-|----------|-----------|-----|------|---------|
-| [**PHP**](./php/) | Built-in Server | globalpayments/php-sdk | 8003 | [Open in CodeSandbox](https://githubbox.com/globalpayments-samples/portico-google-pay-payments/tree/main/php) |
-| [**Node.js**](./nodejs/) | Express.js | globalpayments-api | 8001 | [Open in CodeSandbox](https://githubbox.com/globalpayments-samples/portico-google-pay-payments/tree/main/nodejs) |
-| [**.NET**](./dotnet/) | ASP.NET Core | GlobalPayments.Api | 8006 | [Open in CodeSandbox](https://githubbox.com/globalpayments-samples/portico-google-pay-payments/tree/main/dotnet) |
+| Language | Framework | SDK |
+|----------|-----------|-----|
+| [**PHP**](./php/) | Built-in Server | globalpayments/php-sdk |
+| [**Node.js**](./nodejs/) | Express.js | globalpayments-api |
+| [**.NET**](./dotnet/) | ASP.NET Core | GlobalPayments.Api |
+
+Preview links (runs in browser via CodeSandbox):
+- [PHP Preview](https://githubbox.com/globalpayments-samples/portico-google-pay-payments/tree/main/php)
+- [Node.js Preview](https://githubbox.com/globalpayments-samples/portico-google-pay-payments/tree/main/nodejs)
+- [.NET Preview](https://githubbox.com/globalpayments-samples/portico-google-pay-payments/tree/main/dotnet)
 
 ## How It Works
 
@@ -395,6 +400,16 @@ Each implementation has its own detailed README:
 - [Google Pay Web Integration Guide](https://developers.google.com/pay/api/web/overview)
 - [Google Pay Test Cards](https://developers.google.com/pay/api/web/guides/resources/test-card-suite)
 - [Portico Alternative Payments Docs](https://developer.globalpayments.com/api/references-overview)
+
+## Community
+
+- 🌐 **Developer Portal** — [developer.globalpayments.com](https://developer.globalpayments.com)
+- 💬 **Discord** — [Join the community](https://discord.gg/myER9G9qkc)
+- 📋 **GitHub Discussions** — [github.com/globalpayments-samples](https://github.com/globalpayments-samples)
+- 📧 **Newsletter** — [Subscribe](https://www.globalpayments.com/en-gb/modals/newsletter)
+- 💼 **LinkedIn** — [Global Payments for Developers](https://www.linkedin.com/showcase/global-payments-for-developers/posts/?feedView=all)
+
+Have a question or found a bug? [Open an issue](https://github.com/globalpayments-samples/portico-google-pay-payments/issues) or reach out at [communityexperience@globalpay.com](mailto:communityexperience@globalpay.com).
 
 ## License
 
