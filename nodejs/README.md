@@ -1,252 +1,241 @@
-# Node.js Google Pay Payment Example
+# Node.js — Portico Google Pay Payments
 
-This example demonstrates Google Pay payment processing using Express.js and the Global Payments SDK with Portico Gateway.
+Node.js/Express implementation of Google Pay web payments using the Global Payments Portico gateway. Demonstrates the complete flow from loading the Google Pay button to processing the encrypted payment token server-side.
 
 ## Requirements
 
-- Node.js 14.x or later
-- npm (Node Package Manager)
-- Global Payments account and API credentials
-- Google Pay merchant account (for production)
-- Test environment supports Google Pay without merchant registration
+- Node.js 18+
+- npm
+- Global Payments Portico account with alternative payments (Google Pay) enabled
+- Chrome browser for testing (desktop or Android)
 
 ## Project Structure
 
-- `server.js` - Main application file containing server setup and Google Pay payment processing
-- `index.html` - Client-side Google Pay integration and payment interface
-- `package.json` - Project dependencies and scripts
-- `.env.sample` - Template for environment variables including Google Pay configuration
-- `run.sh` - Convenience script to run the application
+```
+nodejs/
+├── server.js       # Express server — GET /config and POST /process-google-pay
+├── index.html      # Google Pay frontend (served statically)
+├── package.json    # globalpayments-api dependency
+├── .env.sample     # Environment variable template
+├── Dockerfile
+├── run.sh
+├── .devcontainer/
+└── .codesandbox/
+```
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments and Google Pay credentials:
-   ```
-   PUBLIC_API_KEY=pkapi_your_public_key_here
-   SECRET_API_KEY=skapi_your_secret_key_here
-   MERCHANT_NAME="Your Merchant Name"
-   MERCHANT_ID=your_global_payments_merchant_id
-   GOOGLE_PAY_MERCHANT_ID=your_google_pay_merchant_id
-   PORT=8000
-   ```
-4. Install dependencies:
-   ```bash
-   npm install
-   ```
-5. Run the application:
-   ```bash
-   ./run.sh
-   ```
-   Or manually:
-   ```bash
-   npm start
-   ```
-6. Open your browser to `http://localhost:8000`
-7. Navigate to the "Google Pay" tab to test the integration
+**1. Install dependencies**
+```bash
+npm install
+```
 
-## Implementation Details
+**2. Configure credentials**
+```bash
+cp .env.sample .env
+```
 
-### Server Setup
-The application uses Express.js to create a web server that:
-- Serves static files and the Google Pay interface
-- Processes Google Pay payment tokens
-- Provides configuration endpoint for client-side Google Pay setup
-- Handles JSON requests for payment processing
+Edit `.env`:
 
-### SDK Configuration
-Global Payments SDK configuration using environment variables:
-- Loads Portico credentials from .env file
-- Sets up service URL for Portico API communication
-- Configures merchant information for Google Pay
+```env
+PUBLIC_API_KEY=pkapi_cert_jKc1FtuyAydZhZfbB3
+SECRET_API_KEY=skapi_cert_MeHOBQDccnIA8S6ECUes8HNT8v9cuUvQIsJdKZ8pwA
+MERCHANT_ID=777704033964
+MERCHANT_NAME="Test Merchant"
+ENVIRONMENT=TEST
+ENABLE_LOGGING=true
+PORT=8000
+```
 
-### Google Pay Integration
-Google Pay integration flow:
-1. Client loads Google Pay JavaScript API
-2. Initializes Google Pay button with merchant configuration
-3. User selects payment method through Google Pay interface
-4. Google Pay generates encrypted payment token
-5. Token is sent to server for processing via Portico Gateway
-6. Server processes payment and returns result
+**3. Start the server**
+```bash
+npm start
+# Open http://localhost:8000
+```
 
-### Payment Processing
-Payment processing flow:
-1. Client submits Google Pay payment token, amount, and optional billing zip
-2. Server extracts and validates the payment token
-3. Server creates CreditCardData with the Google Pay token
-4. Creates Address with postal code if provided
-5. Processes payment charge through Portico Gateway
-6. Returns success/error response with transaction details
+Or use the convenience script:
+```bash
+./run.sh
+```
 
-### Error Handling
-Implements comprehensive error handling:
-- Validates Google Pay token format and structure
-- Catches and processes API exceptions from Portico
-- Differentiates between API, token, and general errors
-- Returns appropriate error messages to client
+## Environment Variables
+
+| Variable | Description | Required | Example |
+|----------|-------------|----------|---------|
+| `PUBLIC_API_KEY` | Public key passed to browser | ✅ | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
+| `SECRET_API_KEY` | Secret key for server-side Portico API calls | ✅ | `skapi_cert_MeHOBQ...` |
+| `MERCHANT_ID` | Portico merchant ID | ✅ | `777704033964` |
+| `MERCHANT_NAME` | Business name shown in Google Pay sheet | ✅ | `Test Merchant` |
+| `ENVIRONMENT` | Gateway environment | ✅ | `TEST` or `PRODUCTION` |
+| `PORT` | Server port | ❌ | `8000` (default) |
+| `ENABLE_LOGGING` | Writes SDK request/response to `logs/` | ❌ | `true` |
+| `GOOGLE_PAY_MERCHANT_ID` | Google merchant ID (production only) | ❌ | `12345678901234567890` |
+| `GOOGLE_PAY_COUNTRY_CODE` | ISO 3166-1 alpha-2 country code | ❌ | `GB` (default) |
+| `GOOGLE_PAY_CURRENCY_CODE` | ISO 4217 currency code | ❌ | `GBP` (default) |
+| `GOOGLE_PAY_BUTTON_COLOR` | Google Pay button color | ❌ | `black` or `white` |
+
+## SDK Configuration
+
+```javascript
+import {
+    ServicesContainer,
+    PorticoConfig,
+    CreditCardData,
+    MobilePaymentMethodType,
+    PaymentDataSourceType,
+} from 'globalpayments-api';
+
+const config = new PorticoConfig();
+config.secretApiKey = process.env.SECRET_API_KEY;
+config.serviceUrl = 'https://cert.api2.heartlandportico.com';
+
+ServicesContainer.configureService(config);
+```
 
 ## API Endpoints
 
 ### GET /config
-Returns configuration for client-side Google Pay initialization.
 
-Response:
+Returns public credentials and Google Pay configuration for the browser.
+
+**Response:**
 ```json
 {
-    "success": true,
-    "data": {
-        "publicApiKey": "pkapi_your_public_key_here",
-        "merchantInfo": {
-            "merchantName": "Your Merchant Name",
-            "merchantId": "your_global_payments_merchant_id"
-        }
+  "success": true,
+  "data": {
+    "publicApiKey": "pkapi_cert_jKc1FtuyAydZhZfbB3",
+    "merchantInfo": {
+      "merchantName": "Test Merchant",
+      "merchantId": "777704033964"
+    },
+    "googlePayConfig": {
+      "googleMerchantId": "12345678901234567890",
+      "environment": "TEST",
+      "countryCode": "GB",
+      "currencyCode": "GBP",
+      "buttonColor": "black"
     }
+  }
 }
 ```
+
+---
 
 ### POST /process-google-pay
-Processes a Google Pay payment using the provided payment token.
 
-Request Parameters:
-- `paymentToken` (string, required) - Google Pay payment token (JSON string)
-- `amount` (number, required) - Payment amount in USD
-- `billing_zip` (string, optional) - Billing postal code
+Processes a Google Pay payment token through Portico.
 
-Request Body Example:
+**Request body** (`application/json`):
 ```json
 {
-    "paymentToken": "{\"apiVersionMinor\":0,\"apiVersion\":2,\"paymentMethodData\":{\"description\":\"Visa •••• 1234\",\"tokenizationData\":{\"type\":\"PAYMENT_GATEWAY\",\"token\":\"{\\\"signature\\\":\\\"...\\\",\\\"protocolVersion\\\":\\\"ECv1\\\",\\\"signedMessage\\\":\\\"...\\\"}\"},\"type\":\"CARD\",\"info\":{\"cardNetwork\":\"VISA\",\"cardDetails\":\"1234\"}}}",
-    "amount": 10.00,
-    "billing_zip": "12345"
+  "token": "{\"signature\":\"...\",\"protocolVersion\":\"ECv1\",\"signedMessage\":\"...\"}",
+  "amount": "19.99",
+  "billing_zip": "30301"
 }
 ```
 
-Response (Success):
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `token` | string | ✅ | Encrypted Google Pay payment token (JSON string) |
+| `amount` | string/number | ✅ | Charge amount (e.g. `19.99`) |
+| `billing_zip` | string | ❌ | Billing postal code for AVS |
+
+**Response (success):**
 ```json
 {
-    "success": true,
-    "message": "Google Pay payment processed successfully",
-    "data": {
-        "transactionId": "123456789",
-        "amount": 10.00,
-        "currency": "USD",
-        "paymentMethod": "Google Pay"
-    }
+  "success": true,
+  "message": "Google Pay payment processed successfully",
+  "data": {
+    "transactionId": "12345678",
+    "amount": 19.99,
+    "currency": "USD",
+    "paymentMethod": "Google Pay"
+  }
 }
 ```
 
-Response (Error):
+**Response (error):**
 ```json
 {
-    "success": false,
-    "message": "Google Pay payment processing failed",
-    "error": "Detailed error message"
+  "success": false,
+  "message": "API Error: ...",
+  "error": "Detailed error message"
 }
 ```
 
-## Google Pay Testing
+## Payment Processing Flow
 
-### Test Environment
-- The application is configured for Google Pay TEST environment
-- No real payment methods are charged in test mode
-- Google Pay will show test payment methods in supported browsers/devices
-
-### Testing Google Pay
-1. Use Chrome browser (recommended for testing)
-2. Ensure you're logged into a Google account
-3. Add test payment methods to Google Pay (if needed)
-4. Click the Google Pay button to initiate payment flow
-5. Select payment method and complete the flow
-6. Check console logs for detailed debugging information
-
-### Supported Browsers
-- Chrome (Desktop and Mobile Web)
-- Safari (Mobile iOS Web)
-- Firefox (with limitations)
-- Edge (with limitations)
-
-*Note: This example covers web browser integration only. Native mobile app integration requires additional implementation.*
-
-### Supported Card Networks
-- Visa
-- Mastercard
-- American Express
-- Discover
-- JCB
-
-## Production Setup
-
-### Google Pay Merchant Registration
-For production deployment, you'll need to:
-1. Register with Google Pay for Business
-2. Complete merchant verification process
-3. Update environment to 'PRODUCTION'
-4. Configure your domain with Google Pay
-5. Update gateway merchant ID with your actual ID
-
-### Environment Configuration
-Update the following in your `.env` file for production:
-```
-# Production values
-GOOGLE_PAY_MERCHANT_ID=your_actual_merchant_id
-MERCHANT_NAME=Your Actual Business Name
-PUBLIC_API_KEY=pkapi_your_production_key
-SECRET_API_KEY=skapi_your_production_key
-```
-
-Update `index.html` JavaScript:
 ```javascript
-environment: 'PRODUCTION' // Change from 'TEST'
+// 1. Receive encrypted Google Pay token from browser
+const { token, amount, billing_zip } = req.body;
+
+// 2. Attach token to CreditCardData with Google Pay source
+const card = new CreditCardData();
+card.token = token;
+card.mobileType = MobilePaymentMethodType.GOOGLEPAY;
+card.paymentSource = PaymentDataSourceType.GOOGLEPAYWEB;
+
+// 3. Optionally include billing address for AVS
+const address = new Address();
+address.postalCode = sanitizePostalCode(billing_zip);
+
+// 4. Charge through Portico — SDK decrypts and processes
+const response = await card.charge(amount)
+    .withAllowDuplicates(true)
+    .withCurrency('USD')
+    .withAddress(address)
+    .execute();
+
+// 5. Return transactionId to client
+res.json({ success: true, data: { transactionId: response.transactionId } });
 ```
 
-## Security Considerations
+## Google Pay Test Environment
 
-This example demonstrates basic implementation. For production use, consider:
-- Implementing additional input validation
-- Adding request rate limiting
-- Including security headers
-- Implementing proper logging and monitoring
-- Adding payment fraud prevention measures
-- Using HTTPS in production (required for Google Pay)
-- Configuring Cross-Origin Resource Sharing (CORS) appropriately
-- Validating Google Pay token signatures
-- Implementing proper error handling and user feedback
-- Adding transaction logging and audit trails
+In `ENVIRONMENT=TEST`, Google Pay intercepts the payment sheet and returns a simulated token — no actual card is charged. Any Google account with a saved payment method can be used for testing. The test token is processed through Portico's certification endpoint (`cert.api2.heartlandportico.com`).
+
+**Supported card networks:**
+Visa, Mastercard, American Express, Discover, JCB
+
+## Docker
+
+```bash
+docker build -t portico-google-pay-nodejs .
+docker run -p 8001:8000 \
+  -e PUBLIC_API_KEY=your_key \
+  -e SECRET_API_KEY=your_key \
+  -e MERCHANT_ID=your_merchant_id \
+  -e MERCHANT_NAME="Test Merchant" \
+  -e ENVIRONMENT=TEST \
+  portico-google-pay-nodejs
+# Open http://localhost:8001
+```
+
+Or via docker-compose from the project root:
+```bash
+docker-compose up nodejs
+```
 
 ## Troubleshooting
 
-### Google Pay Button Not Showing
-- Check browser console for errors
-- Ensure you're using a supported browser (Chrome recommended)
-- Verify Google Pay JavaScript API is loading correctly
-- Check if `isReadyToPay()` is returning false
+**Google Pay button does not appear**
+Google Pay renders only in Chrome (desktop or Android). Open browser DevTools → Console to see any Google Pay JS initialization errors. Verify `GET /config` returns a valid response — if it throws, the button will not load.
 
-### "Google Pay is not available" Error
-- Ensure you're logged into a Google account
-- Add a payment method to Google Pay
-- Try using Chrome browser
-- Check if the device supports Google Pay
+**"Payment token is required" error**
+The `token` field was missing or empty in the POST body. Check the browser console to see if the Google Pay JS sheet returned an error before producing a token. Common cause: `isReadyToPay()` returning false silently.
 
-### Payment Processing Errors
-- Verify your Portico API credentials are correct
-- Check server logs for detailed error messages
-- Ensure the payment token format is correct
-- Verify your Portico account supports alternative payments
+**"Authentication failed" or Portico 401**
+Your `SECRET_API_KEY` in `.env` is wrong or missing. Confirm it starts with `skapi_cert_` for the TEST environment. Restart (`npm start`) after editing `.env` — the SDK reads credentials at startup.
 
-### Token Extraction Errors
-- Check the Google Pay token structure in browser console
-- Verify the tokenization specification matches your gateway
-- Ensure the payment token is being passed as a JSON string
+**"Alternative payments not enabled" or similar Portico error**
+Google Pay must be explicitly enabled on your Portico certification account. Contact Global Payments support to have `GOOGLEPAY` activated as an accepted payment method.
 
-### Common Issues
-1. **HTTPS Requirement**: Google Pay requires HTTPS in production
-2. **Domain Verification**: Your domain must be registered with Google Pay for production
-3. **API Key Mismatch**: Ensure your API keys match your Portico account
-4. **Token Format**: Google Pay tokens must be properly formatted JSON
+**Server won't start — `import` syntax error**
+The project uses ES module syntax (`import`). Ensure `"type": "module"` is present in `package.json` and you're running Node.js 18+. Check with `node --version`.
 
-### Getting Help
-- Check the browser console for JavaScript errors
-- Review server logs for API errors
-- Consult Global Payments documentation for Portico-specific issues
-- Test with different browsers and devices
+**`logs/` directory missing when `ENABLE_LOGGING=true`**
+Create the directory before starting the server:
+```bash
+mkdir -p nodejs/logs
+```
+Or set `ENABLE_LOGGING=` (empty) in `.env` to disable logging.
