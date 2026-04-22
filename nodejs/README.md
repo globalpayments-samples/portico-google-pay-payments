@@ -9,6 +9,8 @@ Node.js/Express implementation of Google Pay web payments using the Global Payme
 - Global Payments Portico account with alternative payments (Google Pay) enabled
 - Chrome browser for testing (desktop or Android)
 
+---
+
 ## Project Structure
 
 ```
@@ -22,6 +24,8 @@ nodejs/
 ├── .devcontainer/
 └── .codesandbox/
 ```
+
+---
 
 ## Setup
 
@@ -58,6 +62,8 @@ Or use the convenience script:
 ./run.sh
 ```
 
+---
+
 ## Environment Variables
 
 | Variable | Description | Required | Example |
@@ -73,6 +79,8 @@ Or use the convenience script:
 | `GOOGLE_PAY_COUNTRY_CODE` | ISO 3166-1 alpha-2 country code | ❌ | `GB` (default) |
 | `GOOGLE_PAY_CURRENCY_CODE` | ISO 4217 currency code | ❌ | `GBP` (default) |
 | `GOOGLE_PAY_BUTTON_COLOR` | Google Pay button color | ❌ | `black` or `white` |
+
+---
 
 ## SDK Configuration
 
@@ -91,6 +99,8 @@ config.serviceUrl = 'https://cert.api2.heartlandportico.com';
 
 ServicesContainer.configureService(config);
 ```
+
+---
 
 ## API Endpoints
 
@@ -163,6 +173,8 @@ Processes a Google Pay payment token through Portico.
 }
 ```
 
+---
+
 ## Payment Processing Flow
 
 ```javascript
@@ -190,12 +202,16 @@ const response = await card.charge(amount)
 res.json({ success: true, data: { transactionId: response.transactionId } });
 ```
 
+---
+
 ## Google Pay Test Environment
 
 In `ENVIRONMENT=TEST`, Google Pay intercepts the payment sheet and returns a simulated token — no actual card is charged. Any Google account with a saved payment method can be used for testing. The test token is processed through Portico's certification endpoint (`cert.api2.heartlandportico.com`).
 
 **Supported card networks:**
 Visa, Mastercard, American Express, Discover, JCB
+
+---
 
 ## Docker
 
@@ -215,6 +231,8 @@ Or via docker-compose from the project root:
 ```bash
 docker-compose up nodejs
 ```
+
+---
 
 ## Troubleshooting
 
