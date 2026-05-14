@@ -12,25 +12,27 @@
 
 4. **The `serviceUrl` is hardcoded to the cert (sandbox) endpoint.** All three implementations point to `https://cert.api2.heartlandportico.com`. Switch to the production URL for live traffic — there is no automatic env-based toggle for this value; it must be changed in code or injected via an additional env var.
 
+5. **Node.js and .NET hardcode `'USD'` for charge currency; PHP does not.** The `GOOGLE_PAY_CURRENCY_CODE` env var controls the currency displayed in the Google Pay button, but the actual `card.charge()` call in Node.js (`server.js`, lines 104/118/207/215) and .NET (`Program.cs`, lines 174/284) hardcodes `"USD"`. PHP's `sanitizeCurrency()` function passes the request's `currency` field through to the charge (defaulting to GBP). If you adapt Node.js or .NET to charge non-USD currencies, you must update those hardcoded values.
+
 ## Repository Structure
 
 ### Node.js (Express)
-- [`nodejs/server.js`](nodejs/server.js) — SDK config (lines 37–44), `/process-google-pay` endpoint (lines 141–259), `/process-payment` for standard tokens (lines 82–135)
+- [`nodejs/server.js`](nodejs/server.js) — SDK config (`PorticoConfig` setup, lines 37–44), `/process-google-pay` handler (lines 141–259), `/process-payment` handler (lines 82–135)
 - [`nodejs/index.html`](nodejs/index.html) — shared frontend with Google Pay JS integration and `tokenizationSpecification` config (lines 169–175)
 - [`nodejs/package.json`](nodejs/package.json) — dependencies
 
 ### PHP
-- [`php/process-google-pay.php`](php/process-google-pay.php) — SDK config + Google Pay token processing; canonical reference for PHP enum names (`EncyptedMobileType::GOOGLE_PAY`, `PaymentDataSourceType::GOOGLEPAYWEB`)
+- [`php/process-google-pay.php`](php/process-google-pay.php) — `configureSdk()` + Google Pay token processing via `sanitizeCurrency()`; canonical reference for PHP enum names (`EncyptedMobileType::GOOGLE_PAY`, `PaymentDataSourceType::GOOGLEPAYWEB`)
 - [`php/config.php`](php/config.php) — config endpoint, serves env vars to the frontend
 - [`php/process-payment.php`](php/process-payment.php) — standard tokenized card processing
 - [`php/composer.json`](php/composer.json) — dependencies
 
 ### .NET (ASP.NET Core / net9.0)
-- [`dotnet/Program.cs`](dotnet/Program.cs) — SDK config (lines 48–66), `/process-google-pay` endpoint (lines 220–343), `/process-payment` endpoint (lines 122–213)
+- [`dotnet/Program.cs`](dotnet/Program.cs) — `ConfigureGlobalPaymentsSDK()` for SDK setup, `ConfigurePaymentEndpoint()` for `/process-payment`, `ConfigureGooglePayEndpoint()` for `/process-google-pay`
 - [`dotnet/dotnet.csproj`](dotnet/dotnet.csproj) — dependencies
 
 ### Shared
-- `{lang}/index.html` — identical Google Pay frontend across all implementations
+- `nodejs/index.html`, `php/index.html`, `dotnet/wwwroot/index.html` — identical Google Pay frontend across all implementations (.NET serves static files from `wwwroot/`)
 - `{lang}/.env.sample` → copy to `.env` before running
 - `{lang}/run.sh` — installs dependencies and starts server on port 8000
 - `docker-compose.yml` / `Dockerfile.tests` — multi-implementation test runner
@@ -48,16 +50,17 @@ All three implementations expose identical endpoints. `/process-google-pay` acce
 ## Environment Variables
 
 ```bash
-PUBLIC_API_KEY=pkapi_...       # Exposed to frontend for hosted fields / GP config
-SECRET_API_KEY=skapi_...       # Server-side only; used to authenticate SDK calls
-MERCHANT_NAME="Acme Corp"      # Display name shown in Google Pay sheet
-MERCHANT_ID=                   # Global Payments merchant ID (not Google's)
-GOOGLE_PAY_MERCHANT_ID=        # Your Google Pay merchant ID (from Google Pay Business Console)
-ENVIRONMENT=TEST               # Set to PRODUCTION for live; controls Google Pay button mode
-GOOGLE_PAY_COUNTRY_CODE=GB     # ISO 3166-1 alpha-2; defaults to GB
-GOOGLE_PAY_CURRENCY_CODE=GBP   # ISO 4217; defaults to GBP
-PORT=8000                      # Server port
-ENABLE_LOGGING=true            # Optional; writes SDK request/response to logs/
+PUBLIC_API_KEY=pkapi_...            # Exposed to frontend for hosted fields / GP config
+SECRET_API_KEY=skapi_...            # Server-side only; used to authenticate SDK calls
+MERCHANT_NAME="Acme Corp"           # Display name shown in Google Pay sheet
+MERCHANT_ID=                        # Global Payments merchant ID (not Google's)
+GOOGLE_PAY_MERCHANT_ID=             # Your Google Pay merchant ID (from Google Pay Business Console)
+ENVIRONMENT=TEST                    # Set to PRODUCTION for live; controls Google Pay button mode
+GOOGLE_PAY_COUNTRY_CODE=GB          # ISO 3166-1 alpha-2; defaults to GB
+GOOGLE_PAY_CURRENCY_CODE=GBP        # ISO 4217; controls button display only — see Critical Pattern 5
+GOOGLE_PAY_BUTTON_COLOR=black       # Google Pay button color; "black" or "white", defaults to black
+PORT=8000                           # Server port; all three implementations default to 8000
+ENABLE_LOGGING=true                 # Optional; writes SDK request/response to logs/
 ```
 
 ## Architecture Summary
