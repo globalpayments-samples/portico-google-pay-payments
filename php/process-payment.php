@@ -92,33 +92,56 @@ try {
     $address = new Address();
     $address->postalCode = sanitizePostalCode($_POST['billing_zip']);
 
-    // Process the payment transaction with specified amount
-    $response = $card->charge($amount)
+    // Step 1: Authorize the full amount
+    $authResponse = $card->authorize($amount)
         ->withAllowDuplicates(true)
         ->withCurrency('USD')
         ->withAddress($address)
         ->execute();
-    
-    // Verify transaction was successful
-    if ($response->responseCode !== '00') {
+
+    // Verify authorization was successful
+    if ($authResponse->responseCode !== '00') {
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'message' => 'Payment processing failed',
+            'message' => 'Authorization failed',
             'error' => [
-                'code' => 'PAYMENT_DECLINED',
-                'details' => $response->responseMessage
+                'code' => 'AUTH_DECLINED',
+                'details' => $authResponse->responseMessage
             ]
         ]);
         exit;
     }
 
-    // Return success response with transaction ID
+    // Step 2: Capture a reduced amount (simulating partial capture)
+    $captureAmount = round($amount * 0.75, 2);
+
+    $captureResponse = $authResponse->capture($captureAmount)
+        ->withCurrency('USD')
+        ->execute();
+
+    if ($captureResponse->responseCode !== '00') {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Capture failed',
+            'error' => [
+                'code' => 'CAPTURE_FAILED',
+                'details' => $captureResponse->responseMessage
+            ]
+        ]);
+        exit;
+    }
+
+    // Return success response with both transaction details
     echo json_encode([
         'success' => true,
-        'message' => 'Payment successful! Transaction ID: ' . $response->transactionId,
+        'message' => 'Payment successful! Transaction ID: ' . $captureResponse->transactionId,
         'data' => [
-            'transactionId' => $response->transactionId
+            'authTransactionId' => $authResponse->transactionId,
+            'captureTransactionId' => $captureResponse->transactionId,
+            'authorizedAmount' => $amount,
+            'capturedAmount' => $captureAmount
         ]
     ]);
 } catch (ApiException $e) {

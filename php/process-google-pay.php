@@ -151,39 +151,61 @@ try {
     $card->mobileType = EncyptedMobileType::GOOGLE_PAY;
     $card->paymentSource = PaymentDataSourceType::GOOGLEPAYWEB;
 
-    // Process the payment transaction
-    $transaction = $card->charge($amount)
+    // Step 1: Authorize the full amount
+    $authResponse = $card->authorize($amount)
         ->withCurrency($currency)
         ->execute();
 
-    // Verify transaction was successful
-    if ($transaction->responseCode !== '00' && $transaction->responseCode !== 'SUCCESS') {
+    // Verify authorization was successful
+    if ($authResponse->responseCode !== '00' && $authResponse->responseCode !== 'SUCCESS') {
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'message' => 'Payment was declined',
+            'message' => 'Authorization was declined',
             'error' => [
-                'code' => 'PAYMENT_DECLINED',
-                'details' => $transaction->responseMessage ?? 'Payment declined by processor'
+                'code' => 'AUTH_DECLINED',
+                'details' => $authResponse->responseMessage ?? 'Authorization declined by processor'
             ]
         ]);
         exit;
     }
 
-    // Return successful response
+    // Step 2: Capture a reduced amount (simulating partial capture)
+    $captureAmount = number_format(round(floatval($amount) * 0.75, 2), 2, '.', '');
+
+    $captureResponse = $authResponse->capture($captureAmount)
+        ->withCurrency($currency)
+        ->execute();
+
+    if ($captureResponse->responseCode !== '00' && $captureResponse->responseCode !== 'SUCCESS') {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Capture failed',
+            'error' => [
+                'code' => 'CAPTURE_FAILED',
+                'details' => $captureResponse->responseMessage ?? 'Capture failed by processor'
+            ]
+        ]);
+        exit;
+    }
+
+    // Return successful response with both transaction details
     echo json_encode([
         'success' => true,
         'message' => sprintf(
             'Payment successful! Transaction ID: %s',
-            $transaction->transactionId
+            $captureResponse->transactionId
         ),
         'data' => [
-            'transactionId' => $transaction->transactionId,
-            'amount' => $amount,
+            'authTransactionId' => $authResponse->transactionId,
+            'captureTransactionId' => $captureResponse->transactionId,
+            'authorizedAmount' => $amount,
+            'capturedAmount' => $captureAmount,
             'currency' => $currency,
-            'status' => $transaction->responseMessage ?? 'SUCCESS',
-            'responseCode' => $transaction->responseCode,
-            'authCode' => $transaction->authorizationCode ?? null,
+            'status' => $captureResponse->responseMessage ?? 'SUCCESS',
+            'responseCode' => $captureResponse->responseCode,
+            'authCode' => $authResponse->authorizationCode ?? null,
             'timestamp' => date('c')
         ]
     ]);

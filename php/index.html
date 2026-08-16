@@ -405,13 +405,17 @@
         function showResult(data) {
             const resultDiv = document.getElementById('google-pay-result');
             const displayDiv = document.getElementById('google-pay-result-display');
-            
+
             displayDiv.innerHTML = `
-                <strong>Success!</strong><br>
-                Transaction ID: ${data.data.transactionId}<br>
-                Amount: $${data.data.amount}
+                <strong>Success!</strong><br><br>
+                <strong>Authorization</strong><br>
+                Transaction ID: ${data.data.authTransactionId}<br>
+                Authorized Amount: $${data.data.authorizedAmount}<br><br>
+                <strong>Capture</strong><br>
+                Transaction ID: ${data.data.captureTransactionId}<br>
+                Captured Amount: $${data.data.capturedAmount}
             `;
-            
+
             resultDiv.classList.remove('gp-hidden');
         }
 
