@@ -4,7 +4,7 @@ PHP implementation of Google Pay web payments using the Global Payments Portico 
 
 ## Requirements
 
-- PHP 8.0+
+- PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+
 - Composer
 - Global Payments Portico account with alternative payments (Google Pay) enabled
 - Chrome browser for testing (desktop or Android)
@@ -54,7 +54,7 @@ ENABLE_LOGGING=true
 
 **3. Start the server**
 ```bash
-php -S localhost:8000
+./run.sh
 # Open http://localhost:8000
 ```
 
