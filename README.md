@@ -58,7 +58,7 @@ Browser                         Backend                       Portico API / Goog
 - Portico API credentials (`PUBLIC_API_KEY` and `SECRET_API_KEY`)
 - Google account for testing Google Pay in TEST environment
 - Supported browser: Chrome on Android or desktop (Chrome DevTools for testing)
-- Docker, or runtime for your chosen language (PHP 8.0+, Node.js 18+, .NET 8+)
+- Docker, or runtime for your chosen language (PHP 8.2.35+/8.3.36+/8.4.27+/8.5.12+, Node.js 18+, .NET 8+)
 
 ## Quick Start
 
@@ -90,10 +90,9 @@ ENVIRONMENT=TEST
 
 **PHP:**
 ```bash
-composer install
-php -S localhost:8000
-# Open http://localhost:8000
+./run.sh
 ```
+Open the local URL printed by the PHP server.
 
 **Node.js:**
 ```bash
