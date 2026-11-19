@@ -27,7 +27,7 @@
 - [`php/process-payment.php`](php/process-payment.php) — standard tokenized card processing
 - [`php/composer.json`](php/composer.json) — dependencies
 
-### .NET (ASP.NET Core / net9.0)
+### .NET (ASP.NET Core / net10.0)
 - [`dotnet/Program.cs`](dotnet/Program.cs) — `ConfigureGlobalPaymentsSDK()` for SDK setup, `ConfigurePaymentEndpoint()` for `/process-payment`, `ConfigureGooglePayEndpoint()` for `/process-google-pay`
 - [`dotnet/dotnet.csproj`](dotnet/dotnet.csproj) — dependencies
 
