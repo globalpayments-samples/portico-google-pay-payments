@@ -4,7 +4,7 @@ Node.js/Express implementation of Google Pay web payments using the Global Payme
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 24+
 - npm
 - Global Payments Portico account with alternative payments (Google Pay) enabled
 - Chrome browser for testing (desktop or Android)
@@ -249,7 +249,7 @@ Your `SECRET_API_KEY` in `.env` is wrong or missing. Confirm it starts with `ska
 Google Pay must be explicitly enabled on your Portico certification account. Contact Global Payments support to have `GOOGLEPAY` activated as an accepted payment method.
 
 **Server won't start — `import` syntax error**
-The project uses ES module syntax (`import`). Ensure `"type": "module"` is present in `package.json` and you're running Node.js 18+. Check with `node --version`.
+The project uses ES module syntax (`import`). Ensure `"type": "module"` is present in `package.json` and you're running Node.js 24+. Check with `node --version`.
 
 **`logs/` directory missing when `ENABLE_LOGGING=true`**
 Create the directory before starting the server:
