@@ -4,7 +4,7 @@ ASP.NET Core implementation of Google Pay web payments using the Global Payments
 
 ## Requirements
 
-- .NET 8.0+
+- .NET 10.0+
 - Global Payments Portico account with alternative payments (Google Pay) enabled
 - Chrome browser for testing (desktop or Android)
 
