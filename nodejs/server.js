@@ -8,6 +8,7 @@
 import express from 'express';
 import * as dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 import {
     ServicesContainer,
     PaymentDataSourceType,
@@ -32,8 +33,9 @@ const port = process.env.PORT || 8000;
 
 // Serve only the frontend page, never the server's own files
 const indexPath = fileURLToPath(new URL('./index.html', import.meta.url));
+const indexHtml = readFileSync(indexPath, 'utf8');
 app.get(['/', '/index.html'], (req, res) => {
-    res.sendFile(indexPath);
+    res.type('html').send(indexHtml);
 });
 app.use(express.urlencoded({ extended: true })); // Parse form data
 app.use(express.json()); // Parse JSON requests
