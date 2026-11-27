@@ -102,35 +102,38 @@ app.post('/process-payment', async (req, res) => {
         const amount = req.body.amount || 10.00;
 
         // Add billing address if needed
+        let response;
         if (req.body.billing_zip) {
             const address = new Address();
             address.postalCode = sanitizePostalCode(req.body.billing_zip);
             
-            const response = await card.charge(amount)
+            response = await card.charge(amount)
                 .withAllowDuplicates(true)
                 .withCurrency('USD')
                 .withAddress(address)
                 .execute();
-                
-            // Handle response...
-            res.json({
-                success: true,
-                message: 'Payment processed successfully',
-                data: { transactionId: response.transactionId }
-            });
         } else {
             // Process without address
-            const response = await card.charge(amount)
+            response = await card.charge(amount)
                 .withAllowDuplicates(true)
                 .withCurrency('USD')
                 .execute();
-                
-            res.json({
-                success: true,
-                message: 'Payment processed successfully',
-                data: { transactionId: response.transactionId }
+        }
+
+        // The SDK returns declines instead of throwing, so check the response code
+        if (response.responseCode !== '00') {
+            return res.status(400).json({
+                success: false,
+                message: 'Payment processing failed',
+                error: response.responseMessage
             });
         }
+
+        res.json({
+            success: true,
+            message: 'Payment processed successfully',
+            data: { transactionId: response.transactionId }
+        });
 
     } catch (error) {
         res.status(500).json({
@@ -222,6 +225,15 @@ app.post('/process-google-pay', async (req, res) => {
                 .withCurrency('USD')
                 // .withModifier(TransactionModifier.EncryptedMobile)
                 .execute();
+        }
+
+        // The SDK returns declines instead of throwing, so check the response code
+        if (response.responseCode !== '00') {
+            return res.status(400).json({
+                success: false,
+                message: 'Google Pay payment was declined',
+                error: response.responseMessage
+            });
         }
 
         // Return success response
