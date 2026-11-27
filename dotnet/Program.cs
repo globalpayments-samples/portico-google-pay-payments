@@ -4,6 +4,7 @@ using GlobalPayments.Api.PaymentMethods;
 using GlobalPayments.Api.Entities.Enums;
 using GlobalPayments.Api.Utils.Logging;
 using dotenv.net;
+using System.Globalization;
 using System.Text.Json;
 
 namespace CardPaymentSample;
@@ -241,10 +242,13 @@ public class Program
                 }
 
                 var googlePayToken = tokenElement.GetString();
-                var amountStr = amountElement.GetString();
+                // The amount may arrive as a JSON string or a JSON number
+                var amountStr = amountElement.ValueKind == JsonValueKind.Number
+                    ? amountElement.GetRawText()
+                    : amountElement.ValueKind == JsonValueKind.String ? amountElement.GetString() : null;
 
                 // Validate and parse amount
-                if (!decimal.TryParse(amountStr, out var amount) || amount <= 0)
+                if (!decimal.TryParse(amountStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) || amount <= 0)
                 {
                     return Results.BadRequest(new {
                         success = false,
