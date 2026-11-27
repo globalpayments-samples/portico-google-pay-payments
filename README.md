@@ -105,7 +105,7 @@ npm start
 ```bash
 dotnet restore
 dotnet run
-# Open http://localhost:5000
+# Open http://localhost:8000
 ```
 
 ### 4. Test Google Pay
