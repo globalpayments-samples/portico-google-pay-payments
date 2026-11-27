@@ -126,7 +126,7 @@ try {
     $requestData = json_decode(file_get_contents('php://input'));
 
     // Validate required POST parameters
-    if (!isset($requestData->token)) {
+    if (!isset($requestData->token) || !is_string($requestData->token)) {
         throw new ApiException('Google Pay token is required');
     }
 
