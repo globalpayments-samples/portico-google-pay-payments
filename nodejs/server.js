@@ -44,7 +44,7 @@ app.use(express.json()); // Parse JSON requests
 const config = new PorticoConfig();
 config.secretApiKey = process.env.SECRET_API_KEY;
 config.serviceUrl = 'https://cert.api2.heartlandportico.com'; // Use production URL for live transactions
-if (process.env.ENABLE_LOGGING) {
+if (process.env.ENABLE_LOGGING === 'true') {
     config.enableLogging = true;
     config.requestLogger = new SampleRequestLogger(new Logger("logs"));
 }
