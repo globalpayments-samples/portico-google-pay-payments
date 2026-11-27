@@ -54,7 +54,7 @@ ENABLE_LOGGING=true
 **3. Start the server**
 ```bash
 dotnet run
-# Open http://localhost:5000
+# Open http://localhost:8000
 ```
 
 Or use the convenience script:
